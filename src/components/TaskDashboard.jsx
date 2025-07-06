@@ -1,10 +1,10 @@
 import React, { useState, useContext, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom'; // ✅ Import useNavigate
 import { AuthContext } from './AuthContext';
 import { taskApi } from '../services/api';
 import TaskForm from './TaskForm';
 import './TaskDashboard.css';
 
-// Priority colors
 const priorityColors = {
   high: '#F56565',
   medium: '#ECC94B',
@@ -12,7 +12,6 @@ const priorityColors = {
   default: '#E2E8F0'
 };
 
-// Task item component
 const TaskItem = React.memo(({ task, onDelete, onToggleComplete, onEdit }) => {
   const formatDate = (dateString) => {
     try {
@@ -36,9 +35,7 @@ const TaskItem = React.memo(({ task, onDelete, onToggleComplete, onEdit }) => {
           {task.description && <p className="task-description">{task.description}</p>}
           <div className="task-meta">
             {task.dueDate && (
-              <span className="due-date">
-                📅 {formatDate(task.dueDate)}
-              </span>
+              <span className="due-date">📅 {formatDate(task.dueDate)}</span>
             )}
             {task.priority && (
               <span
@@ -59,7 +56,6 @@ const TaskItem = React.memo(({ task, onDelete, onToggleComplete, onEdit }) => {
   );
 });
 
-// Stats dashboard
 const TaskStatsDashboard = ({ tasks }) => {
   const stats = useMemo(() => {
     const completed = tasks.filter(t => t.completed).length;
@@ -87,9 +83,9 @@ const TaskStatsDashboard = ({ tasks }) => {
   );
 };
 
-// Main component
 const TaskDashboard = () => {
   const { user, logout } = useContext(AuthContext);
+  const navigate = useNavigate(); // ✅ Use navigate
   const [tasks, setTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
@@ -115,6 +111,11 @@ const TaskDashboard = () => {
   useEffect(() => {
     fetchTasks();
   }, [user]);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/'); // ✅ Redirect to home
+  };
 
   const handleTaskUpdate = (action, payload) => {
     switch (action) {
@@ -143,7 +144,7 @@ const TaskDashboard = () => {
         handleTaskUpdate('create', result);
       }
       setIsModalOpen(false);
-      fetchTasks(); // ✅ Refresh task list
+      fetchTasks();
     } catch (err) {
       setError(err.message || 'Failed to save task.');
     }
@@ -209,7 +210,7 @@ const TaskDashboard = () => {
           <h1>Task Manager</h1>
           <div className="user-actions">
             <span>Welcome, {user?.name}</span>
-            <button onClick={logout} className="logout-btn">Logout</button>
+            <button onClick={handleLogout} className="logout-btn">Logout</button>
           </div>
         </div>
       </header>
@@ -263,7 +264,7 @@ const TaskDashboard = () => {
         ) : sortedTasks.length === 0 ? (
           <div className="empty-state">
             <img
-              src="https://media.istockphoto.com/id/2222107052/photo/blue-calendar-with-check-mark-and-pencil-on-light-blue-background.webp"
+              src="https://media.istockphoto.com/id/2222107052/photo/blue-calendar-with-check-mark-and-pencil-on-light-blue-background.webp?a=1&b=1&s=612x612&w=0&k=20&c=fvwa2jJYMesgCyF-ptL5jMFLE5WLkLqRXu3_03cKcv8="
               alt="No tasks found"
               className="empty-icon"
             />

@@ -12,6 +12,12 @@
       "name": "clere",
       "email": "clere@gmail.com",
       "password": "clere1234"
+    },
+    {
+      "id": "508a",
+      "name": "Juliet",
+      "email": "Juliet@gmail.com",
+      "password": "juliet1234"
     }
   ],
   "tasks": [
@@ -66,6 +72,24 @@
       "title": "fg",
       "description": "",
       "dueDate": "2025-07-08",
+      "priority": "medium",
+      "completed": false
+    },
+    {
+      "id": "9f42",
+      "userId": "dd27",
+      "title": "wed",
+      "description": "",
+      "dueDate": "2025-07-08",
+      "priority": "medium",
+      "completed": false
+    },
+    {
+      "id": "0e5e",
+      "userId": "2feb",
+      "title": "school",
+      "description": "",
+      "dueDate": "2025-07-31",
       "priority": "medium",
       "completed": false
     }

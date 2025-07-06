@@ -96,7 +96,7 @@ export default function Register() {
     <div className="register-container">
       <div className="register-card">
         <div className="register-header">
-          <img src="/logo.png" alt="Task Pulse" className="register-logo" />
+          <img src="https://media.istockphoto.com/id/2176243874/photo/calendar-with-marked-date.webp?a=1&b=1&s=612x612&w=0&k=20&c=7u9oRp1JnNmmqyY0RqecBS6AwcJjztbOpEjw8MDPLNE=" alt="Task Pulse" className="register-logo" />
           <h2>Create Account</h2>
           <p>Get started with your task management</p>
         </div>

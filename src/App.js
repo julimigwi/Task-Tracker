@@ -41,7 +41,7 @@ const App = () => {
             path="/dashboard/edit/:id"
             element={
               <ProtectedRoute>
-                <TaskForm />
+                <TaskDashboard/>
               </ProtectedRoute>
             }
           />

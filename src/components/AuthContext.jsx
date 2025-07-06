@@ -8,13 +8,20 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    const storedToken = localStorage.getItem("token");
-    if (storedUser && storedToken) {
-      setUser(storedUser);
-      setToken(storedToken);
+    try {
+      const storedUser = JSON.parse(localStorage.getItem("user"));
+      const storedToken = localStorage.getItem("token");
+      if (storedUser && storedToken) {
+        setUser(storedUser);
+        setToken(storedToken);
+      }
+    } catch (error) {
+      console.error("Failed to parse user data from localStorage:", error);
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
   const login = (userData, authToken) => {
@@ -24,11 +31,14 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("token", authToken);
   };
 
-  const logout = () => {
+  const logout = (callback) => {
     setUser(null);
     setToken(null);
     localStorage.removeItem("user");
     localStorage.removeItem("token");
+    if (typeof callback === 'function') {
+      callback(); // Optional redirect function
+    }
   };
 
   const isAuthenticated = () => {
