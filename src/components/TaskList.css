@@ -165,3 +165,37 @@
   margin-bottom: 1rem;
   opacity: 0.6;
 }
+/* Accessibility improvements */
+.task-checkbox {
+  cursor: pointer;
+}
+
+[aria-busy="true"] {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Empty state styling */
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+}
+
+.empty-icon {
+  max-width: 200px;
+  margin-bottom: 1rem;
+}
+
+/* Error state styling */
+.error-state {
+  color: #e53e3e;
+  text-align: center;
+  padding: 1rem;
+}
+
+.retry-btn {
+  margin-top: 0.5rem;
+}

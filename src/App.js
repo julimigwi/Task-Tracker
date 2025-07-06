@@ -6,7 +6,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import TaskDashboard from './components/TaskDashboard';
 import TaskForm from './components/TaskForm';
-import TaskList from './components/TaskList';
+import HomePage from './components/HomePage';
 // import NotFound from './components/NotFound';
 import './App.css';
 
@@ -15,25 +15,38 @@ const App = () => {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Authentication Routes */}
-          <Route path="/login" element={< Login/>} />
-          <Route path="/register" element={<Register/>} />
-          
-          {/* Main Dashboard Route */}
-          <Route path="/" element={
-            <ProtectedRoute>
-              <TaskDashboard />
-            </ProtectedRoute>
-          }>
-            {/* Nested Task Routes */}
-            <Route index element={<TaskList />} />
-            <Route path="tasks">
-              <Route path="new" element={<TaskForm />} />
-              <Route path="edit/:id" element={<TaskForm />} />
-            </Route>
-          </Route>
-          
-          {/* Fallback Routes */}
+          {/* Public Routes */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+
+          {/* Protected Routes */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <TaskDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/new"
+            element={
+              <ProtectedRoute>
+                <TaskForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/edit/:id"
+            element={
+              <ProtectedRoute>
+                <TaskForm />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Fallback */}
           {/* <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} /> */}
         </Routes>

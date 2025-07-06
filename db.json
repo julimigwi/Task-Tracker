@@ -1,10 +1,73 @@
 {
   "users": [
     {
-      "id": 1,
-      "email": "test@example.com",
-      "password": "password123"
+      "userId": 1,
+      "name": "John Doe",
+      "email": "john@example.com",
+      "password": "password123",
+      "id": "2feb"
+    },
+    {
+      "id": "dd27",
+      "name": "clere",
+      "email": "clere@gmail.com",
+      "password": "clere1234"
     }
   ],
-  "tasks": []
+  "tasks": [
+    {
+      "id": "1",
+      "title": "Complete project",
+      "description": "Finish the task dashboard",
+      "completed": true,
+      "dueDate": "2025-07-08",
+      "priority": "high",
+      "userId": 1
+    },
+    {
+      "id": "4c59",
+      "userId": 1,
+      "title": "complete reading the fox",
+      "description": "",
+      "dueDate": "2025-07-14",
+      "priority": "high",
+      "completed": false
+    },
+    {
+      "id": "ee93",
+      "userId": 1,
+      "title": "go to school",
+      "description": "",
+      "dueDate": "2025-07-15",
+      "priority": "low",
+      "completed": false
+    },
+    {
+      "id": "edad",
+      "userId": "dd27",
+      "title": "school",
+      "description": "",
+      "dueDate": "2025-07-10",
+      "priority": "medium",
+      "completed": false
+    },
+    {
+      "id": "733e",
+      "userId": "dd27",
+      "title": "s",
+      "description": "",
+      "dueDate": "2025-07-07",
+      "priority": "medium",
+      "completed": false
+    },
+    {
+      "id": "14ff",
+      "userId": "dd27",
+      "title": "fg",
+      "description": "",
+      "dueDate": "2025-07-08",
+      "priority": "medium",
+      "completed": false
+    }
+  ]
 }

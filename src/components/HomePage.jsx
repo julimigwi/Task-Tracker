@@ -142,7 +142,7 @@ const HomePage = () => {
           <div style={styles.ctaButtons}>
             {user ? (
               <Link
-                to="/tasks"
+                to="/login"
                 style={{ ...styles.btn, ...styles.btnPrimary }}
                 onMouseOver={e => (e.currentTarget.style.backgroundColor = styles.btnPrimaryHover.backgroundColor)}
                 onMouseOut={e => (e.currentTarget.style.backgroundColor = styles.btnPrimary.backgroundColor)}
@@ -152,7 +152,7 @@ const HomePage = () => {
             ) : (
               <>
                 <Link
-                  to="/register"
+                  to="/login"
                   style={{ ...styles.btn, ...styles.btnPrimary }}
                   onMouseOver={e => (e.currentTarget.style.backgroundColor = styles.btnPrimaryHover.backgroundColor)}
                   onMouseOut={e => (e.currentTarget.style.backgroundColor = styles.btnPrimary.backgroundColor)}
@@ -160,7 +160,7 @@ const HomePage = () => {
                   Get Started
                 </Link>
                 <Link
-                  to="/login"
+                  to="/register"
                   style={{ ...styles.btn, ...styles.btnSecondary }}
                 >
                   Login
@@ -171,7 +171,7 @@ const HomePage = () => {
         </div>
         <div style={styles.heroImage}>
           <img 
-            src="/images/task-management.svg" 
+            src="https://images.unsplash.com/photo-1503681355143-d5485eea7f14?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8dGFzayUyMGlsbHVzdGFydGlvbnN8ZW58MHx8MHx8fDA%3D" 
             alt="Task management illustration" 
             style={styles.heroImg}
           />
@@ -227,7 +227,7 @@ const HomePage = () => {
       <section style={styles.footerCta}>
         <h2 style={styles.sectionTitle}>Ready to Boost Your Productivity?</h2>
         <Link
-          to={user ? "/tasks" : "/register"}
+          to={user ? "/login" : "/register"}
           style={{ ...styles.btn, ...styles.btnPrimary, ...styles.btnLarge }}
           onMouseOver={e => (e.currentTarget.style.backgroundColor = styles.btnPrimaryHover.backgroundColor)}
           onMouseOut={e => (e.currentTarget.style.backgroundColor = styles.btnPrimary.backgroundColor)}

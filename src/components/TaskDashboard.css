@@ -310,6 +310,7 @@
 }
 
 /* Modal */
+/* Modal Styles */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -324,15 +325,20 @@
 }
 
 .modal-content {
-  background: white;
+  background-color: white;
+  padding: 2rem;
   border-radius: 8px;
   width: 90%;
-  max-width: 600px;
+  max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
-  position: relative;
-  padding: 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+.modal-title {
+  margin-top: 0;
+  color: #2d3748;
 }
 
 .modal-close {
@@ -343,10 +349,28 @@
   border: none;
   font-size: 1.5rem;
   cursor: pointer;
-  color: #64748b;
-  padding: 0.5rem;
+  color: #718096;
 }
 
 .modal-close:hover {
-  color: #1e293b;
+  color: #2d3748;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .modal-content {
+    width: 95%;
+    padding: 1.5rem;
+  }
 }

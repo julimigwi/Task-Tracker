@@ -1,42 +1,37 @@
 import axios from 'axios';
 
-// Environment-based configuration
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/v1';
+// ✅ 1. Updated default base URL (no `/v1` for JSON Server)
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 const NOTIFY_SERVER_URL = process.env.REACT_APP_NOTIFY_URL || 'http://localhost:7000';
 
-// Create main API instance
+// Main Axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000, // Default timeout
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
   }
 });
 
-// Request interceptor for auth tokens and common headers
+// Request interceptor
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('authToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  
-  // Add request ID for tracking
+
+  // Add request ID
   config.headers['X-Request-ID'] = crypto.randomUUID();
-  
   return config;
 }, error => {
   return Promise.reject(error);
 });
 
-// Response interceptor for consistent error handling
+// Response interceptor
 api.interceptors.response.use(
-  response => {
-    // You can transform response data here if needed
-    return response.data;
-  },
+  response => response.data,
   error => {
-    // Handle network errors
     if (!error.response) {
       return Promise.reject({
         message: 'Network error - please check your connection',
@@ -45,10 +40,8 @@ api.interceptors.response.use(
       });
     }
 
-    // Handle specific status codes
     switch (error.response.status) {
       case 401:
-        // Trigger logout or token refresh
         break;
       case 403:
         error.response.data.message = 'You are not authorized to perform this action';
@@ -70,7 +63,7 @@ api.interceptors.response.use(
   }
 );
 
-// Retry utility for failed requests
+// Retry logic
 const withRetry = async (fn, retries = 2, delay = 1000) => {
   try {
     return await fn();
@@ -83,31 +76,41 @@ const withRetry = async (fn, retries = 2, delay = 1000) => {
   }
 };
 
-// Auth API endpoints
+// ✅ Auth API (still mock)
 export const authApi = {
-  login: (credentials) => api.post('/auth/login', credentials),
-  register: (userData) => api.post('/auth/register', userData),
-  logout: () => api.post('/auth/logout'),
-  refreshToken: () => api.post('/auth/refresh'),
-  getProfile: () => api.get('/auth/profile'),
-  updateProfile: (updates) => api.patch('/auth/profile', updates)
+  register: (userData) => api.post('/users', userData),
+  login: (credentials) =>
+    api.get(`/users?email=${credentials.email}&password=${credentials.password}`),
+  logout: () => Promise.resolve(), // no-op for mock
+  getProfile: () => Promise.resolve(), // mock
+  updateProfile: (updates) => Promise.resolve(updates)
 };
 
-// Task API endpoints
+// ✅ Task API for JSON Server (corrected endpoints)
 export const taskApi = {
-  getAll: (userId, params = {}) => api.get(`/tasks?userId=${userId}`, { params }),
-  getById: (taskId) => api.get(`/tasks/${taskId}`),
-  create: (taskData) => api.post('/tasks', taskData),
-  delete: (taskId) => api.delete(`/tasks/${taskId}`),
-  update: (taskId, updates) => api.patch(`/tasks/${taskId}`, updates),
-  updateStatus: (taskId, status) => api.patch(`/tasks/${taskId}/status`, { status }),
-  search: (userId, query) => api.get(`/tasks/search?userId=${userId}&q=${query}`),
-  bulkUpdate: (taskIds, updates) => api.patch('/tasks/bulk-update', { taskIds, updates })
+  getAll: (userId, params = {}) =>
+    api.get(`/tasks`, { params: { userId, ...params } }),
+
+  getById: (userId, taskId) =>
+    api.get(`/tasks/${taskId}`),
+
+  create: (taskData) =>
+    api.post('/tasks', taskData),
+
+  update: (taskId, updates) =>
+    api.patch(`/tasks/${taskId}`, updates),
+
+  delete: (taskId) =>
+    api.delete(`/tasks/${taskId}`),
+
+  // ✅ Updated for JSON Server — direct PATCH to /tasks/:id
+  updateStatus: (taskId, completed) =>
+    api.patch(`/tasks/${taskId}`, { completed })
 };
 
-// Notification API endpoints
+// ✅ Notification API (unchanged)
 export const notifyApi = {
-  sms: async (data) => withRetry(() => 
+  sms: async (data) => withRetry(() =>
     axios.post(`${NOTIFY_SERVER_URL}/notify/sms`, data, { timeout: 3000 })
   ),
   email: async (data) => withRetry(() =>
@@ -118,10 +121,10 @@ export const notifyApi = {
   )
 };
 
-// File upload helper (separate instance for uploads)
+// ✅ File Upload API (unchanged)
 export const uploadApi = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000, // Longer timeout for uploads
+  timeout: 30000,
   headers: {
     'Content-Type': 'multipart/form-data'
   }
@@ -139,7 +142,7 @@ export const fileApi = {
   upload: (file, progressCallback) => {
     const formData = new FormData();
     formData.append('file', file);
-    
+
     return uploadApi.post('/files', formData, {
       onUploadProgress: progressEvent => {
         if (progressCallback) {
@@ -154,7 +157,7 @@ export const fileApi = {
   delete: (fileId) => api.delete(`/files/${fileId}`)
 };
 
-// Health check endpoint
+// ✅ Health check
 export const checkApiHealth = async () => {
   try {
     const response = await axios.get(`${API_BASE_URL}/health`, { timeout: 2000 });
@@ -164,5 +167,5 @@ export const checkApiHealth = async () => {
   }
 };
 
-// Export base API instance for custom requests
+// Default export
 export default api;

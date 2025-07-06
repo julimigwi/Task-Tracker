@@ -4,7 +4,7 @@ import { AuthContext } from './AuthContext';
 import { taskApi, notifyApi } from '../services/api';
 import './TaskForm.css';
 
-const TaskForm = ({ taskToEdit, onSuccess }) => {
+const TaskForm = ({ taskToEdit }) => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -27,7 +27,6 @@ const TaskForm = ({ taskToEdit, onSuccess }) => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
-    // Clear error when user types
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -54,12 +53,11 @@ const TaskForm = ({ taskToEdit, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) return;
-    if (!user?.id) return;
+
+    if (!validateForm() || !user?.id) return;
 
     setIsSubmitting(true);
-    
+
     try {
       const taskData = {
         userId: user.id,
@@ -73,13 +71,13 @@ const TaskForm = ({ taskToEdit, onSuccess }) => {
         result = await taskApi.create(taskData);
       }
 
-      // Send notifications if enabled
+      // Send SMS notification
       if (notificationPreference.sms && user.phoneNumber) {
         try {
           await notifyApi.sms({
             phoneNumber: user.phoneNumber,
-            message: taskToEdit 
-              ? `Task updated: ${formData.title}` 
+            message: taskToEdit
+              ? `Task updated: ${formData.title}`
               : `New task created: ${formData.title}`
           });
         } catch (smsError) {
@@ -87,7 +85,7 @@ const TaskForm = ({ taskToEdit, onSuccess }) => {
         }
       }
 
-      // Reset form if not editing
+      // Reset form if needed
       if (!taskToEdit) {
         setFormData({
           title: '',
@@ -98,11 +96,8 @@ const TaskForm = ({ taskToEdit, onSuccess }) => {
         });
       }
 
-      if (onSuccess) {
-        onSuccess(result);
-      } else {
-        navigate('/tasks');
-      }
+      // Always redirect to dashboard after task action
+      navigate('/dashboard');
     } catch (error) {
       console.error('Task submission error:', error);
       setErrors({
@@ -117,11 +112,9 @@ const TaskForm = ({ taskToEdit, onSuccess }) => {
     <div className="task-form-container">
       <div className="task-form-card">
         <h2>{taskToEdit ? 'Edit Task' : 'Create New Task'}</h2>
-        
+
         {errors.server && (
-          <div className="form-error">
-            {errors.server}
-          </div>
+          <div className="form-error">{errors.server}</div>
         )}
 
         <form onSubmit={handleSubmit}>
@@ -223,7 +216,7 @@ const TaskForm = ({ taskToEdit, onSuccess }) => {
           <div className="form-actions">
             <button
               type="button"
-              onClick={() => navigate('/tasks')}
+              onClick={() => navigate('/dashboard')}
               className="secondary-btn"
               disabled={isSubmitting}
             >

@@ -1,21 +1,24 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, useMemo } from 'react';
 import { AuthContext } from './AuthContext';
 import { taskApi } from '../services/api';
 import TaskForm from './TaskForm';
 import './TaskDashboard.css';
 
-const TaskItem = ({ 
-  task, 
-  onDelete, 
-  onToggleComplete,
-  onEdit 
-}) => {
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'high': return '#F56565';
-      case 'medium': return '#ECC94B';
-      case 'low': return '#48BB78';
-      default: return '#E2E8F0';
+// Priority colors
+const priorityColors = {
+  high: '#F56565',
+  medium: '#ECC94B',
+  low: '#48BB78',
+  default: '#E2E8F0'
+};
+
+// Task item component
+const TaskItem = React.memo(({ task, onDelete, onToggleComplete, onEdit }) => {
+  const formatDate = (dateString) => {
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return dateString;
     }
   };
 
@@ -30,19 +33,17 @@ const TaskItem = ({
         />
         <div className="task-content">
           <h3 className="task-title">{task.title}</h3>
-          {task.description && (
-            <p className="task-description">{task.description}</p>
-          )}
+          {task.description && <p className="task-description">{task.description}</p>}
           <div className="task-meta">
             {task.dueDate && (
               <span className="due-date">
-                <i className="icon">📅</i> {new Date(task.dueDate).toLocaleDateString()}
+                📅 {formatDate(task.dueDate)}
               </span>
             )}
             {task.priority && (
-              <span 
+              <span
                 className="priority-badge"
-                style={{ backgroundColor: getPriorityColor(task.priority) }}
+                style={{ backgroundColor: priorityColors[task.priority] || priorityColors.default }}
               >
                 {task.priority}
               </span>
@@ -51,90 +52,61 @@ const TaskItem = ({
         </div>
       </div>
       <div className="task-actions">
-        <button 
-          onClick={() => onEdit(task)}
-          className="edit-btn"
-        >
-          Edit
-        </button>
-        <button 
-          onClick={() => onDelete(task.id)}
-          className="delete-btn"
-        >
-          Delete
-        </button>
+        <button onClick={() => onEdit(task)} className="edit-btn">Edit</button>
+        <button onClick={() => onDelete(task.id)} className="delete-btn">Delete</button>
+      </div>
+    </div>
+  );
+});
+
+// Stats dashboard
+const TaskStatsDashboard = ({ tasks }) => {
+  const stats = useMemo(() => {
+    const completed = tasks.filter(t => t.completed).length;
+    const pending = tasks.length - completed;
+    const high = tasks.filter(t => t.priority === 'high').length;
+    const medium = tasks.filter(t => t.priority === 'medium').length;
+    const low = tasks.filter(t => t.priority === 'low').length;
+    return { completed, pending, high, medium, low };
+  }, [tasks]);
+
+  return (
+    <div className="task-stats-dashboard">
+      <div className="stats-card"><h3>Total</h3><p>{tasks.length}</p></div>
+      <div className="stats-card"><h3>Completed</h3><p>{stats.completed}</p></div>
+      <div className="stats-card"><h3>Pending</h3><p>{stats.pending}</p></div>
+      <div className="stats-card">
+        <h3>Priority</h3>
+        <div className="priority-stats">
+          <span style={{ color: priorityColors.high }}>High: {stats.high}</span>
+          <span style={{ color: priorityColors.medium }}>Medium: {stats.medium}</span>
+          <span style={{ color: priorityColors.low }}>Low: {stats.low}</span>
+        </div>
       </div>
     </div>
   );
 };
 
-const TaskList = ({ 
-  tasks, 
-  isLoading,
-  error,
-  onRetry,
-  onDelete,
-  onToggleComplete,
-  onEdit
-}) => {
-  return (
-    <div className="task-list-container">
-      {isLoading ? (
-        <div className="loading-state">
-          <div className="spinner"></div>
-          <p>Loading tasks...</p>
-        </div>
-      ) : error ? (
-        <div className="error-state">
-          <p>{error}</p>
-          <button onClick={onRetry} className="retry-btn">
-            Retry
-          </button>
-        </div>
-      ) : tasks.length === 0 ? (
-        <div className="empty-state">
-          <img src="/empty-tasks.svg" alt="No tasks" className="empty-icon" />
-          <h3>No tasks found</h3>
-          <p>Create your first task to get started</p>
-        </div>
-      ) : (
-        <div className="task-list">
-          {tasks.map(task => (
-            <TaskItem
-              key={task.id}
-              task={task}
-              onDelete={onDelete}
-              onToggleComplete={onToggleComplete}
-              onEdit={onEdit}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
+// Main component
 const TaskDashboard = () => {
   const { user, logout } = useContext(AuthContext);
   const [tasks, setTasks] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentTask, setCurrentTask] = useState(null);
+  const [sortBy, setSortBy] = useState('dueDate');
 
   const fetchTasks = async () => {
-    if (!user?.id) return;
-    
+    if (!user?.id) return setError('No user logged in');
     setIsLoading(true);
-    setError(null);
     try {
-      const tasks = await taskApi.getAll(user.id);
-      setTasks(tasks);
-    } catch (error) {
-      setError('Failed to load tasks. Please try again.');
-      console.error('Error fetching tasks:', error);
+      const response = await taskApi.getAll(user.id);
+      setTasks(Array.isArray(response) ? response : []);
+    } catch (err) {
+      setError(err.message || 'Failed to load tasks.');
     } finally {
       setIsLoading(false);
     }
@@ -144,149 +116,184 @@ const TaskDashboard = () => {
     fetchTasks();
   }, [user]);
 
-  const handleDelete = async (taskId) => {
-    if (!window.confirm('Are you sure you want to delete this task?')) return;
-    
-    try {
-      await taskApi.delete(taskId);
-      setTasks(tasks.filter(task => task.id !== taskId));
-    } catch (error) {
-      setError('Failed to delete task');
-      console.error('Error deleting task:', error);
+  const handleTaskUpdate = (action, payload) => {
+    switch (action) {
+      case 'delete':
+        setTasks(prev => prev.filter(task => task.id !== payload));
+        break;
+      case 'update':
+        setTasks(prev => prev.map(t => (t.id === payload.id ? payload : t)));
+        break;
+      case 'create':
+        setTasks(prev => [...prev, payload]);
+        break;
+      default:
+        break;
     }
   };
 
-  const handleToggleComplete = async (task) => {
+  const handleFormSubmit = async (taskData) => {
     try {
-      const updatedTask = await taskApi.updateStatus(task.id, !task.completed);
-      setTasks(tasks.map(t => t.id === task.id ? updatedTask : t));
-    } catch (error) {
-      setError('Failed to update task');
-      console.error('Error updating task:', error);
+      let result;
+      if (taskData.id) {
+        result = await taskApi.update(taskData.id, taskData);
+        handleTaskUpdate('update', result);
+      } else {
+        result = await taskApi.create({ ...taskData, userId: user.id });
+        handleTaskUpdate('create', result);
+      }
+      setIsModalOpen(false);
+      fetchTasks(); // ✅ Refresh task list
+    } catch (err) {
+      setError(err.message || 'Failed to save task.');
     }
   };
 
   const handleNewTask = () => {
     setCurrentTask(null);
-    setIsFormOpen(true);
+    setIsModalOpen(true);
   };
 
   const handleEditTask = (task) => {
     setCurrentTask(task);
-    setIsFormOpen(true);
+    setIsModalOpen(true);
   };
 
-  const handleFormSuccess = (newOrUpdatedTask) => {
-    setIsFormOpen(false);
-    if (currentTask) {
-      setTasks(tasks.map(t => t.id === newOrUpdatedTask.id ? newOrUpdatedTask : t));
-    } else {
-      setTasks([...tasks, newOrUpdatedTask]);
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this task?')) return;
+    try {
+      await taskApi.delete(id);
+      handleTaskUpdate('delete', id);
+    } catch (err) {
+      setError(`Failed to delete: ${err.message}`);
     }
   };
 
-  const filteredTasks = tasks.filter(task => {
-    const statusMatch = 
-      activeTab === 'all' || 
-      (activeTab === 'completed' && task.completed) || 
-      (activeTab === 'pending' && !task.completed);
-    
-    const searchMatch = 
-      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    return statusMatch && searchMatch;
-  });
+  const handleToggleComplete = async (task) => {
+    try {
+      const updated = await taskApi.updateStatus(task.id, !task.completed, user.id);
+      handleTaskUpdate('update', updated);
+    } catch (err) {
+      setError(`Failed to update task: ${err.message}`);
+    }
+  };
+
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(task => {
+      const statusMatch =
+        activeTab === 'all' ||
+        (activeTab === 'completed' && task.completed) ||
+        (activeTab === 'pending' && !task.completed);
+      const searchMatch =
+        task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      return statusMatch && searchMatch;
+    });
+  }, [tasks, activeTab, searchQuery]);
+
+  const sortedTasks = useMemo(() => {
+    return [...filteredTasks].sort((a, b) => {
+      if (sortBy === 'dueDate') return new Date(a.dueDate || '9999-12-31') - new Date(b.dueDate || '9999-12-31');
+      if (sortBy === 'priority') {
+        const order = { high: 1, medium: 2, low: 3 };
+        return (order[a.priority] || 4) - (order[b.priority] || 4);
+      }
+      return a.title.localeCompare(b.title);
+    });
+  }, [filteredTasks, sortBy]);
 
   return (
     <div className="task-dashboard">
       <header className="dashboard-header">
         <div className="header-content">
-          <h1>Task Pulse</h1>
+          <h1>Task Manager</h1>
           <div className="user-actions">
-            <span className="welcome-message">Welcome, {user?.name}</span>
-            <button onClick={logout} className="logout-btn">
-              Logout
-            </button>
+            <span>Welcome, {user?.name}</span>
+            <button onClick={logout} className="logout-btn">Logout</button>
           </div>
         </div>
       </header>
 
       <main className="dashboard-main">
-        <div className="controls-section">
-          <div className="search-container">
-            <input
-              type="text"
-              placeholder="Search tasks..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
-            />
-            <button className="search-btn">
-              <i className="search-icon">🔍</i>
-            </button>
-          </div>
+        <TaskStatsDashboard tasks={tasks} />
 
-          <div className="action-buttons">
-            <button onClick={handleNewTask} className="primary-btn">
-              + New Task
-            </button>
-          </div>
+        <div className="controls-section">
+          <button onClick={handleNewTask} className="primary-btn">+ New Task</button>
         </div>
 
         {error && (
           <div className="error-alert">
             <p>{error}</p>
-            <button onClick={fetchTasks} className="retry-btn">
-              Retry
-            </button>
+            <button onClick={fetchTasks} className="retry-btn">Retry</button>
           </div>
         )}
 
-        <div className="filter-tabs">
-          <button
-            className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`}
-            onClick={() => setActiveTab('all')}
-          >
-            All Tasks
-          </button>
-          <button
-            className={`tab-btn ${activeTab === 'pending' ? 'active' : ''}`}
-            onClick={() => setActiveTab('pending')}
-          >
-            Pending
-          </button>
-          <button
-            className={`tab-btn ${activeTab === 'completed' ? 'active' : ''}`}
-            onClick={() => setActiveTab('completed')}
-          >
-            Completed
-          </button>
+        <div className="filter-controls">
+          <div className="filter-tabs">
+            {['all', 'pending', 'completed'].map(tab => (
+              <button
+                key={tab}
+                className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab[0].toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
+          <div className="sort-controls">
+            <label htmlFor="sort-select">Sort By:</label>
+            <select
+              id="sort-select"
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value)}
+              className="sort-select"
+            >
+              <option value="dueDate">Due Date</option>
+              <option value="priority">Priority</option>
+              <option value="title">Title</option>
+            </select>
+          </div>
         </div>
 
-        <TaskList
-          tasks={filteredTasks}
-          isLoading={isLoading}
-          error={error}
-          onRetry={fetchTasks}
-          onDelete={handleDelete}
-          onToggleComplete={handleToggleComplete}
-          onEdit={handleEditTask}
-        />
+        {isLoading ? (
+          <div className="loading-state">
+            <div className="spinner" aria-busy="true" />
+            <p>Loading tasks...</p>
+          </div>
+        ) : sortedTasks.length === 0 ? (
+          <div className="empty-state">
+            <img
+              src="https://media.istockphoto.com/id/2222107052/photo/blue-calendar-with-check-mark-and-pencil-on-light-blue-background.webp"
+              alt="No tasks found"
+              className="empty-icon"
+            />
+            <h3>No tasks found</h3>
+            <p>Try adjusting your filters or add a new task.</p>
+          </div>
+        ) : (
+          <div className="task-list">
+            {sortedTasks.map(task => (
+              <TaskItem
+                key={task.id}
+                task={task}
+                onDelete={handleDelete}
+                onToggleComplete={handleToggleComplete}
+                onEdit={handleEditTask}
+              />
+            ))}
+          </div>
+        )}
       </main>
 
-      {isFormOpen && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <button 
-              className="modal-close"
-              onClick={() => setIsFormOpen(false)}
-            >
-              &times;
-            </button>
-            <TaskForm 
+      {isModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setIsModalOpen(false)}>&times;</button>
+            <h2 className="modal-title">{currentTask ? 'Edit Task' : 'Create New Task'}</h2>
+            <TaskForm
               taskToEdit={currentTask}
-              onSuccess={handleFormSuccess}
+              onSubmit={handleFormSubmit}
+              onCancel={() => setIsModalOpen(false)}
             />
           </div>
         </div>

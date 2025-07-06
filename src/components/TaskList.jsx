@@ -1,20 +1,26 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext } from 'react';
 import { AuthContext } from './AuthContext';
 import { taskApi } from '../services/api';
 import './TaskList.css';
 
-const TaskItem = ({ 
+const priorityColors = {
+  high: '#F56565',
+  medium: '#ECC94B',
+  low: '#48BB78',
+  default: '#E2E8F0'
+};
+
+const TaskItem = React.memo(({ 
   task, 
   onDelete, 
   onToggleComplete,
   onEdit 
 }) => {
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'high': return '#F56565';
-      case 'medium': return '#ECC94B';
-      case 'low': return '#48BB78';
-      default: return '#E2E8F0';
+  const formatDate = (dateString) => {
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return dateString;
     }
   };
 
@@ -26,6 +32,7 @@ const TaskItem = ({
           checked={task.completed}
           onChange={() => onToggleComplete(task)}
           className="task-checkbox"
+          aria-label={task.completed ? 'Mark task incomplete' : 'Mark task complete'}
         />
         <div className="task-content">
           <h3 className="task-title">{task.title}</h3>
@@ -35,13 +42,16 @@ const TaskItem = ({
           <div className="task-meta">
             {task.dueDate && (
               <span className="due-date">
-                <i className="icon">📅</i> {new Date(task.dueDate).toLocaleDateString()}
+                <i className="icon" aria-hidden="true">📅</i> 
+                {formatDate(task.dueDate)}
               </span>
             )}
             {task.priority && (
               <span 
                 className="priority-badge"
-                style={{ backgroundColor: getPriorityColor(task.priority) }}
+                style={{ 
+                  backgroundColor: priorityColors[task.priority] || priorityColors.default 
+                }}
               >
                 {task.priority}
               </span>
@@ -53,26 +63,28 @@ const TaskItem = ({
         <button 
           onClick={() => onEdit(task)}
           className="edit-btn"
+          aria-label={`Edit task ${task.title}`}
         >
           Edit
         </button>
         <button 
           onClick={() => onDelete(task.id)}
           className="delete-btn"
+          aria-label={`Delete task ${task.title}`}
         >
           Delete
         </button>
       </div>
     </div>
   );
-};
+});
 
 const TaskList = ({ 
-  tasks, 
+  tasks = [], 
   onTaskUpdate,
   onEditTask,
-  isLoading,
-  error,
+  isLoading = false,
+  error = null,
   onRetry
 }) => {
   const { user } = useContext(AuthContext);
@@ -84,56 +96,72 @@ const TaskList = ({
       await taskApi.delete(id);
       onTaskUpdate('delete', id);
     } catch (err) {
-      console.error('Error deleting task:', err);
-      alert('Failed to delete task');
+      console.error('Failed to delete task:', err);
+      alert(`Failed to delete task: ${err.message || 'Please try again'}`);
     }
   };
 
   const handleToggleComplete = async (task) => {
     try {
-      const updatedTask = await taskApi.updateStatus(task.id, !task.completed);
+      const updatedTask = await taskApi.updateStatus(
+        task.id, 
+        !task.completed,
+        user.id // Pass user ID for verification
+      );
       onTaskUpdate('update', updatedTask);
     } catch (err) {
-      console.error('Error updating task:', err);
-      alert('Failed to update task');
+      console.error('Failed to update task:', err);
+      alert(`Failed to update task: ${err.message || 'Please try again'}`);
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="loading-state">
+        <div className="spinner" aria-busy="true"></div>
+        <p>Loading tasks...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="error-state">
+        <p>{error}</p>
+        <button onClick={onRetry} className="retry-btn">
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (tasks.length === 0) {
+    return (
+      <div className="empty-state">
+        <img 
+          src="/empty-tasks.svg" 
+          alt="No tasks" 
+          className="empty-icon" 
+        />
+        <h3>No tasks found</h3>
+        <p>Create your first task to get started</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="task-list-container">
-      {isLoading ? (
-        <div className="loading-state">
-          <div className="spinner"></div>
-          <p>Loading tasks...</p>
-        </div>
-      ) : error ? (
-        <div className="error-state">
-          <p>{error}</p>
-          <button onClick={onRetry} className="retry-btn">
-            Retry
-          </button>
-        </div>
-      ) : tasks.length === 0 ? (
-        <div className="empty-state">
-          <img src="/empty-tasks.svg" alt="No tasks" className="empty-icon" />
-          <h3>No tasks found</h3>
-          <p>Create your first task to get started</p>
-        </div>
-      ) : (
-        <div className="task-list">
-          {tasks.map(task => (
-            <TaskItem
-              key={task.id}
-              task={task}
-              onDelete={handleDelete}
-              onToggleComplete={handleToggleComplete}
-              onEdit={onEditTask}
-            />
-          ))}
-        </div>
-      )}
+    <div className="task-list">
+      {tasks.map(task => (
+        <TaskItem
+          key={task.id}
+          task={task}
+          onDelete={handleDelete}
+          onToggleComplete={handleToggleComplete}
+          onEdit={onEditTask}
+        />
+      ))}
     </div>
   );
 };
 
-export default TaskList;
+export default React.memo(TaskList);
