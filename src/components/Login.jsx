@@ -1,62 +1,107 @@
 import { useContext, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "./AuthContext";
+import { authApi } from "../services/api";
 import "./Login.css";
 
 export default function Login() {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: ""
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError("");
+    setIsLoading(true);
 
     try {
-      const res = await axios.get(`http://localhost:5000/users?email=${email}&password=${password}`);
-      if (res.data.length > 0) {
-        login(res.data[0]);
-        navigate("/");
-      } else {
-        alert("Invalid credentials!");
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Error during login");
+      // Use the authApi service instead of direct axios call
+      const { user, token } = await authApi.login({
+        email: formData.email,
+        password: formData.password
+      });
+      
+      login(user, token);
+      navigate("/dashboard"); // Redirect to dashboard instead of home
+    } catch (err) {
+      console.error("Login error:", err);
+      setError(err.message || "Invalid credentials. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="form-container">
-      <form onSubmit={handleLogin} className="form-box">
-        <h2>Welcome Back</h2>
+    <div className="login-container">
+      <div className="login-card">
+        <div className="login-header">
+          <img src="/logo.png" alt="Task Pulse" className="login-logo" />
+          <h2>Welcome Back</h2>
+          <p>Log in to manage your tasks</p>
+        </div>
 
-        <input
-          type="email"
-          placeholder="Email"
-          className="input-field"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+        {error && <div className="alert error">{error}</div>}
 
-        <input
-          type="password"
-          placeholder="Password"
-          className="input-field"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+        <form onSubmit={handleLogin} className="login-form">
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="Enter your email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              autoComplete="username"
+            />
+          </div>
 
-        <button type="submit" className="btn">Login</button>
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="Enter your password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              autoComplete="current-password"
+            />
+          </div>
 
-        <p className="switch-text">
-          Don't have an account?{" "}
-          <a href="/register" className="switch-link">Register</a>
-        </p>
-      </form>
+          <div className="forgot-password">
+            <Link to="/forgot-password">Forgot password?</Link>
+          </div>
+
+          <button 
+            type="submit" 
+            className="btn primary"
+            disabled={isLoading}
+          >
+            {isLoading ? "Logging in..." : "Login"}
+          </button>
+        </form>
+
+        <div className="login-footer">
+          <span>Don't have an account?</span>
+          <Link to="/register" className="link">Register</Link>
+        </div>
+      </div>
     </div>
   );
 }
