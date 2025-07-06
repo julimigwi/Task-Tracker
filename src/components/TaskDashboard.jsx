@@ -1,15 +1,14 @@
-import React, { useState, useContext, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom'; // ✅ Import useNavigate
+import React, { useState, useContext, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from './AuthContext';
 import { taskApi } from '../services/api';
 import TaskForm from './TaskForm';
-import './TaskDashboard.css';
 
 const priorityColors = {
   high: '#F56565',
   medium: '#ECC94B',
   low: '#48BB78',
-  default: '#E2E8F0'
+  default: '#CBD5E1'
 };
 
 const TaskItem = React.memo(({ task, onDelete, onToggleComplete, onEdit }) => {
@@ -22,78 +21,57 @@ const TaskItem = React.memo(({ task, onDelete, onToggleComplete, onEdit }) => {
   };
 
   return (
-    <div className={`task-item ${task.completed ? 'completed' : ''}`}>
-      <div className="task-main">
+    <div style={{
+      backgroundColor: '#f8fafc',
+      padding: '16px',
+      borderRadius: '10px',
+      marginTop: '10px',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <input
           type="checkbox"
           checked={task.completed}
           onChange={() => onToggleComplete(task)}
-          className="task-checkbox"
+          style={{ width: '18px', height: '18px' }}
         />
-        <div className="task-content">
-          <h3 className="task-title">{task.title}</h3>
-          {task.description && <p className="task-description">{task.description}</p>}
-          <div className="task-meta">
-            {task.dueDate && (
-              <span className="due-date">📅 {formatDate(task.dueDate)}</span>
-            )}
-            {task.priority && (
-              <span
-                className="priority-badge"
-                style={{ backgroundColor: priorityColors[task.priority] || priorityColors.default }}
-              >
-                {task.priority}
-              </span>
-            )}
+        <div>
+          <h4 style={{ margin: 0, textDecoration: task.completed ? 'line-through' : 'none' }}>{task.title}</h4>
+          <p style={{ margin: '4px 0', fontSize: '13px', color: '#64748b' }}>{task.description}</p>
+          <div style={{ fontSize: '12px', color: '#475569' }}>
+            📅 {formatDate(task.dueDate)}
+            <span style={{
+              marginLeft: '8px',
+              backgroundColor: priorityColors[task.priority] || priorityColors.default,
+              padding: '2px 8px',
+              borderRadius: '12px',
+              color: '#fff',
+              fontSize: '12px'
+            }}>
+              {task.priority}
+            </span>
           </div>
         </div>
       </div>
-      <div className="task-actions">
-        <button onClick={() => onEdit(task)} className="edit-btn">Edit</button>
-        <button onClick={() => onDelete(task.id)} className="delete-btn">Delete</button>
+      <div>
+        <button onClick={() => onEdit(task)} style={{ marginRight: '8px', background: '#e2e8f0', border: 'none', padding: '6px 12px', borderRadius: '6px' }}>Edit</button>
+        <button onClick={() => onDelete(task.id)} style={{ background: '#fecaca', border: 'none', padding: '6px 12px', borderRadius: '6px' }}>Delete</button>
       </div>
     </div>
   );
 });
 
-const TaskStatsDashboard = ({ tasks }) => {
-  const stats = useMemo(() => {
-    const completed = tasks.filter(t => t.completed).length;
-    const pending = tasks.length - completed;
-    const high = tasks.filter(t => t.priority === 'high').length;
-    const medium = tasks.filter(t => t.priority === 'medium').length;
-    const low = tasks.filter(t => t.priority === 'low').length;
-    return { completed, pending, high, medium, low };
-  }, [tasks]);
-
-  return (
-    <div className="task-stats-dashboard">
-      <div className="stats-card"><h3>Total</h3><p>{tasks.length}</p></div>
-      <div className="stats-card"><h3>Completed</h3><p>{stats.completed}</p></div>
-      <div className="stats-card"><h3>Pending</h3><p>{stats.pending}</p></div>
-      <div className="stats-card">
-        <h3>Priority</h3>
-        <div className="priority-stats">
-          <span style={{ color: priorityColors.high }}>High: {stats.high}</span>
-          <span style={{ color: priorityColors.medium }}>Medium: {stats.medium}</span>
-          <span style={{ color: priorityColors.low }}>Low: {stats.low}</span>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const TaskDashboard = () => {
   const { user, logout } = useContext(AuthContext);
-  const navigate = useNavigate(); // ✅ Use navigate
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('all');
   const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentTask, setCurrentTask] = useState(null);
-  const [sortBy, setSortBy] = useState('dueDate');
 
   const fetchTasks = async () => {
     if (!user?.id) return setError('No user logged in');
@@ -114,7 +92,7 @@ const TaskDashboard = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/'); // ✅ Redirect to home
+    navigate('/');
   };
 
   const handleTaskUpdate = (action, payload) => {
@@ -131,33 +109,6 @@ const TaskDashboard = () => {
       default:
         break;
     }
-  };
-
-  const handleFormSubmit = async (taskData) => {
-    try {
-      let result;
-      if (taskData.id) {
-        result = await taskApi.update(taskData.id, taskData);
-        handleTaskUpdate('update', result);
-      } else {
-        result = await taskApi.create({ ...taskData, userId: user.id });
-        handleTaskUpdate('create', result);
-      }
-      setIsModalOpen(false);
-      fetchTasks();
-    } catch (err) {
-      setError(err.message || 'Failed to save task.');
-    }
-  };
-
-  const handleNewTask = () => {
-    setCurrentTask(null);
-    setIsModalOpen(true);
-  };
-
-  const handleEditTask = (task) => {
-    setCurrentTask(task);
-    setIsModalOpen(true);
   };
 
   const handleDelete = async (id) => {
@@ -179,122 +130,172 @@ const TaskDashboard = () => {
     }
   };
 
-  const filteredTasks = useMemo(() => {
-    return tasks.filter(task => {
-      const statusMatch =
-        activeTab === 'all' ||
-        (activeTab === 'completed' && task.completed) ||
-        (activeTab === 'pending' && !task.completed);
-      const searchMatch =
-        task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (task.description && task.description.toLowerCase().includes(searchQuery.toLowerCase()));
-      return statusMatch && searchMatch;
-    });
-  }, [tasks, activeTab, searchQuery]);
-
-  const sortedTasks = useMemo(() => {
-    return [...filteredTasks].sort((a, b) => {
-      if (sortBy === 'dueDate') return new Date(a.dueDate || '9999-12-31') - new Date(b.dueDate || '9999-12-31');
-      if (sortBy === 'priority') {
-        const order = { high: 1, medium: 2, low: 3 };
-        return (order[a.priority] || 4) - (order[b.priority] || 4);
-      }
-      return a.title.localeCompare(b.title);
-    });
-  }, [filteredTasks, sortBy]);
+  const openFormModal = (task = null) => {
+    setCurrentTask(task);
+    setIsModalOpen(true);
+  };
 
   return (
-    <div className="task-dashboard">
-      <header className="dashboard-header">
-        <div className="header-content">
-          <h1>Task Manager</h1>
-          <div className="user-actions">
-            <span>Welcome, {user?.name}</span>
-            <button onClick={handleLogout} className="logout-btn">Logout</button>
+    <div style={{ fontFamily: "Segoe UI, sans-serif", backgroundColor: "#f8f9fc", minHeight: "100vh", padding: "20px" }}>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+        <h2 style={{ fontWeight: "bold", fontSize: "24px", color: "#1e293b" }}>📋 Task Tracker</h2>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <span style={{ fontSize: "14px", color: "#1e293b" }}>👤 {user?.name || 'Demo User'}</span>
+          <button
+            onClick={handleLogout}
+            style={{
+              backgroundColor: "#ffffff",
+              border: "1px solid #cbd5e1",
+              borderRadius: "8px",
+              padding: "6px 14px",
+              fontWeight: "500",
+              cursor: "pointer"
+            }}
+          >
+            ⏏ Logout
+          </button>
+        </div>
+      </div>
+
+      {/* Hero Section */}
+      <div style={{
+        background: "linear-gradient(90deg, #3b82f6, #6366f1)",
+        color: "#fff",
+        padding: "24px",
+        borderRadius: "10px",
+        marginBottom: "24px"
+      }}>
+        <h2 style={{ fontSize: "22px", fontWeight: "600" }}>Welcome back, {user?.name || 'Demo User'}!</h2>
+        <p style={{ fontSize: "14px", margin: "8px 0 16px" }}>Ready to tackle your tasks? Let's make today productive!</p>
+        <button
+          onClick={() => openFormModal(null)}
+          style={{
+            backgroundColor: "#fff",
+            color: "#3b82f6",
+            border: "none",
+            borderRadius: "6px",
+            padding: "10px 16px",
+            fontWeight: "bold",
+            fontSize: "14px",
+            cursor: "pointer"
+          }}
+        >
+          ＋ Create New Task
+        </button>
+      </div>
+
+      {/* Layout */}
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "20px" }}>
+        {/* Tasks */}
+        <div>
+          <div style={{
+            backgroundColor: "#fff",
+            padding: "16px",
+            borderRadius: "10px",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+            marginBottom: "20px"
+          }}>
+            <h3 style={{ fontWeight: "600", fontSize: "18px", color: "#1e293b" }}>Your Tasks</h3>
+            <p style={{ fontSize: "14px", color: "#64748b" }}>Manage and track your daily tasks</p>
+
+            {isLoading ? (
+              <div style={{ padding: "20px", textAlign: "center" }}>
+                <p>Loading...</p>
+              </div>
+            ) : tasks.length === 0 ? (
+              <div style={{
+                backgroundColor: "#f1f5f9",
+                borderRadius: "8px",
+                padding: "32px",
+                textAlign: "center",
+                marginTop: "16px"
+              }}>
+                <h4 style={{ fontWeight: "500", color: "#64748b" }}>No tasks yet</h4>
+                <p style={{ fontSize: "14px", color: "#94a3b8" }}>Create your first task to get started!</p>
+              </div>
+            ) : (
+              tasks.map(task => (
+                <TaskItem
+                  key={task.id}
+                  task={task}
+                  onDelete={handleDelete}
+                  onToggleComplete={handleToggleComplete}
+                  onEdit={openFormModal}
+                />
+              ))
+            )}
           </div>
         </div>
-      </header>
 
-      <main className="dashboard-main">
-        <TaskStatsDashboard tasks={tasks} />
-
-        <div className="controls-section">
-          <button onClick={handleNewTask} className="primary-btn">+ New Task</button>
-        </div>
-
-        {error && (
-          <div className="error-alert">
-            <p>{error}</p>
-            <button onClick={fetchTasks} className="retry-btn">Retry</button>
-          </div>
-        )}
-
-        <div className="filter-controls">
-          <div className="filter-tabs">
-            {['all', 'pending', 'completed'].map(tab => (
-              <button
-                key={tab}
-                className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
-                onClick={() => setActiveTab(tab)}
-              >
-                {tab[0].toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
-          </div>
-          <div className="sort-controls">
-            <label htmlFor="sort-select">Sort By:</label>
-            <select
-              id="sort-select"
-              value={sortBy}
-              onChange={e => setSortBy(e.target.value)}
-              className="sort-select"
+        {/* Sidebar */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          <div style={{
+            backgroundColor: "#fff",
+            padding: "16px",
+            borderRadius: "10px",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
+          }}>
+            <h3 style={{ fontWeight: "600", fontSize: "16px", color: "#0f172a" }}>Quick Actions</h3>
+            <button
+              onClick={() => openFormModal(null)}
+              style={{
+                backgroundColor: "#0f172a",
+                color: "#fff",
+                border: "none",
+                borderRadius: "8px",
+                padding: "12px",
+                marginTop: "12px",
+                cursor: "pointer",
+                fontWeight: "500",
+                width: "100%"
+              }}
             >
-              <option value="dueDate">Due Date</option>
-              <option value="priority">Priority</option>
-              <option value="title">Title</option>
-            </select>
+              ＋ Add New Task
+            </button>
+          </div>
+
+          <div style={{
+            backgroundColor: "#fff",
+            padding: "16px",
+            borderRadius: "10px",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.05)"
+          }}>
+            <h3 style={{ fontWeight: "600", fontSize: "16px", color: "#0f172a" }}>Tips</h3>
+            <p style={{ fontSize: "13px", margin: "6px 0", color: "#475569" }}>Your Daily tasks should be your main priority</p>
+            <p style={{ fontSize: "13px", color: "#475569" }}>
+              Keeping track of your tasks helps you stay organized and focused. Use the "Create New Task" button to add tasks, and mark them as complete when done.
+            </p>
           </div>
         </div>
+      </div>
 
-        {isLoading ? (
-          <div className="loading-state">
-            <div className="spinner" aria-busy="true" />
-            <p>Loading tasks...</p>
-          </div>
-        ) : sortedTasks.length === 0 ? (
-          <div className="empty-state">
-            <img
-              src="https://media.istockphoto.com/id/2222107052/photo/blue-calendar-with-check-mark-and-pencil-on-light-blue-background.webp?a=1&b=1&s=612x612&w=0&k=20&c=fvwa2jJYMesgCyF-ptL5jMFLE5WLkLqRXu3_03cKcv8="
-              alt="No tasks found"
-              className="empty-icon"
-            />
-            <h3>No tasks found</h3>
-            <p>Try adjusting your filters or add a new task.</p>
-          </div>
-        ) : (
-          <div className="task-list">
-            {sortedTasks.map(task => (
-              <TaskItem
-                key={task.id}
-                task={task}
-                onDelete={handleDelete}
-                onToggleComplete={handleToggleComplete}
-                onEdit={handleEditTask}
-              />
-            ))}
-          </div>
-        )}
-      </main>
-
+      {/* Modal */}
       {isModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setIsModalOpen(false)}>&times;</button>
-            <h2 className="modal-title">{currentTask ? 'Edit Task' : 'Create New Task'}</h2>
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: "rgba(0,0,0,0.4)",
+          display: "flex", justifyContent: "center", alignItems: "center",
+          zIndex: 9999
+        }} onClick={() => setIsModalOpen(false)}>
+          <div
+            style={{
+              backgroundColor: "#fff",
+              padding: "24px",
+              borderRadius: "10px",
+              width: "100%",
+              maxWidth: "500px"
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <button onClick={() => setIsModalOpen(false)} style={{ float: "right", fontWeight: "bold", border: "none", background: "none" }}>×</button>
+            <h2 style={{ marginTop: 0 }}>{currentTask ? 'Edit Task' : 'Create New Task'}</h2>
             <TaskForm
               taskToEdit={currentTask}
-              onSubmit={handleFormSubmit}
-              onCancel={() => setIsModalOpen(false)}
+              onSubmitSuccess={(result) => {
+                handleTaskUpdate(currentTask ? 'update' : 'create', result);
+                setIsModalOpen(false);
+              }}
             />
           </div>
         </div>

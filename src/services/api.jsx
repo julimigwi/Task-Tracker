@@ -166,6 +166,8 @@ export const checkApiHealth = async () => {
     return false;
   }
 };
+///json-server --watch db.json --port 5000---This command is used to start the JSON Server for local development
+
 
 // Default export
 export default api;

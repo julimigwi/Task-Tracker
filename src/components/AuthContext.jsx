@@ -7,16 +7,18 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Load from localStorage on mount
   useEffect(() => {
     try {
       const storedUser = JSON.parse(localStorage.getItem("user"));
       const storedToken = localStorage.getItem("token");
+
       if (storedUser && storedToken) {
         setUser(storedUser);
         setToken(storedToken);
       }
-    } catch (error) {
-      console.error("Failed to parse user data from localStorage:", error);
+    } catch (err) {
+      console.error("AuthContext: Failed to restore session", err);
       localStorage.removeItem("user");
       localStorage.removeItem("token");
     } finally {
@@ -36,24 +38,23 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     localStorage.removeItem("user");
     localStorage.removeItem("token");
-    if (typeof callback === 'function') {
-      callback(); // Optional redirect function
+
+    if (typeof callback === "function") {
+      callback();
     }
   };
 
-  const isAuthenticated = () => {
-    return !!user && !!token;
-  };
+  const isAuthenticated = () => !!user && !!token;
 
   return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
-        token, 
-        isLoading, 
-        isAuthenticated, 
-        login, 
-        logout 
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isLoading,
+        isAuthenticated,
+        login,
+        logout
       }}
     >
       {children}

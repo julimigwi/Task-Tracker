@@ -1,12 +1,10 @@
 import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { AuthContext } from './AuthContext';
 import { taskApi, notifyApi } from '../services/api';
 import './TaskForm.css';
 
-const TaskForm = ({ taskToEdit }) => {
+const TaskForm = ({ taskToEdit, onSubmitSuccess }) => {
   const { user } = useContext(AuthContext);
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: taskToEdit?.title || '',
     description: taskToEdit?.description || '',
@@ -85,19 +83,11 @@ const TaskForm = ({ taskToEdit }) => {
         }
       }
 
-      // Reset form if needed
-      if (!taskToEdit) {
-        setFormData({
-          title: '',
-          description: '',
-          dueDate: '',
-          priority: 'medium',
-          completed: false
-        });
+      // Notify parent to update dashboard
+      if (typeof onSubmitSuccess === 'function') {
+        onSubmitSuccess(result);
       }
 
-      // Always redirect to dashboard after task action
-      navigate('/dashboard');
     } catch (error) {
       console.error('Task submission error:', error);
       setErrors({
@@ -216,7 +206,7 @@ const TaskForm = ({ taskToEdit }) => {
           <div className="form-actions">
             <button
               type="button"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => onSubmitSuccess(null)} // just closes modal
               className="secondary-btn"
               disabled={isSubmitting}
             >

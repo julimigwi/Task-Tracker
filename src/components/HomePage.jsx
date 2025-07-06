@@ -152,7 +152,7 @@ const HomePage = () => {
             ) : (
               <>
                 <Link
-                  to="/login"
+                  to="/register"
                   style={{ ...styles.btn, ...styles.btnPrimary }}
                   onMouseOver={e => (e.currentTarget.style.backgroundColor = styles.btnPrimaryHover.backgroundColor)}
                   onMouseOut={e => (e.currentTarget.style.backgroundColor = styles.btnPrimary.backgroundColor)}
@@ -160,7 +160,7 @@ const HomePage = () => {
                   Get Started
                 </Link>
                 <Link
-                  to="/register"
+                  to="/login"
                   style={{ ...styles.btn, ...styles.btnSecondary }}
                 >
                   Login
